@@ -1,0 +1,104 @@
+services:
+  fdm-pack-loader-postgres:
+    image: postgres:15-alpine
+    container_name: fdm-pack-loader-postgres
+    environment:
+      POSTGRES_DB: ${PACK_LOADER_POSTGRES_DB:-fdm_pack_loader}
+      POSTGRES_USER: ${PACK_LOADER_POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${PACK_LOADER_POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${PACK_LOADER_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - fdm-pack-loader-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PACK_LOADER_POSTGRES_USER:-postgres} -d ${PACK_LOADER_POSTGRES_DB:-fdm_pack_loader}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - beeatlas-network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: fdm-pack-loader-rabbitmq
+    user: "rabbitmq:rabbitmq"
+    restart: unless-stopped
+    ports:
+      - "${PACK_LOADER_RABBITMQ_AMQP_PORT:-5672}:5672"
+      - "${PACK_LOADER_RABBITMQ_UI_PORT:-15672}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:-secret-cookie-for-dev}
+    command: >
+      sh -c "
+        rabbitmq-server &
+        sleep 20;
+        rabbitmqadmin declare queue name=tech_capability_queue durable=true;
+        rabbitmqadmin declare queue name=business_capability_queue durable=true;
+        rabbitmqadmin declare queue name=package_queue durable=true;
+        rabbitmqadmin declare queue name=product_queue durable=true;
+        rabbitmqadmin declare queue name=TECH_PRODUCT_RELATION durable=true;
+        wait
+      "
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - beeatlas-network
+
+  fdm-pack-loader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fdm-pack-loader-app
+    depends_on:
+      fdm-pack-loader-postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST:-rabbitmq}
+      SPRING_RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      SPRING_RABBITMQ_VIRTUAL_HOST: ${RABBITMQ_VHOST:-/}
+      SPRING_RABBITMQ_TEMPLATE_EXCHANGE: ${RABBITMQ_EXCHANGE:-pack.loader.exchange}
+      SPRING_RABBITMQ_TEMPLATE_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-pack.loader.routing}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${PACK_LOADER_POSTGRES_HOST:-fdm-pack-loader-postgres}:5432/${PACK_LOADER_POSTGRES_DB:-fdm_pack_loader}
+      SPRING_DATASOURCE_USERNAME: ${PACK_LOADER_POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${PACK_LOADER_POSTGRES_PASSWORD:-postgres}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: pack_loader
+      SPRING_FLYWAY_DEFAULT_SCHEMA: pack_loader
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+      SPRING_FLYWAY_CLEAN_DISABLED: "true"
+      INTEGRATION_CAPABILITY_SERVER_URL: "http://capability-service:8080"
+      INTEGRATION_PRODUCTS_SERVER_URL: "http://products-service:8080"
+      INTEGRATION_AUTHSSO_SERVER_URL: "http://auth-service:8080"
+      INTEGRATION_TECHRADAR_SERVER_URL: "http://techradar-service:8080"
+      OTEL_SDK_DISABLED: "true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    ports:
+      - "${PACK_LOADER_APP_PORT:-8080}:8080"
+    networks:
+      - beeatlas-network
+    restart: unless-stopped
+
+networks:
+  beeatlas-network:
+    driver: bridge
+
+volumes:
+  fdm-pack-loader-postgres:
+  rabbitmq_data:
