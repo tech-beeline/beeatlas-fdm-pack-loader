@@ -53,4 +53,20 @@ public class CapabilityClient {
         }
         return null;
     }
+
+    public HttpStatus postCriteria(String body, String source) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.add("SOURCE", source);
+
+            HttpEntity<String> entity = new HttpEntity<>(body, headers);
+            return restTemplate
+                    .exchange(capabilityServerUrl + "/api/v1/criterias", HttpMethod.POST, entity, Void.class)
+                    .getStatusCode();
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        return null;
+    }
 }

@@ -219,6 +219,35 @@ public class PackageService {
         }
     }
 
+    public void addCriteria(PackagePart packagePart, int count) throws Exception {
+        String source = existPackage(packagePart.getIdPackage()).getSource();
+        existsByPackageIdAndPartNumAndStatusIn(packagePart.getIdPackage(), packagePart.getPartNum());
+        PackagePart existing = packagePartRepository.findByIdPackageAndPartNum(packagePart.getIdPackage(), packagePart.getPartNum());
+        PackagePart workPart;
+        if (existing != null) {
+            existing.setStatusId(StatusEnumUtils.getIdByStatus(PROCESS_STATUS));
+            existing.setPayload(packagePart.getPayload());
+            workPart = packagePartRepository.save(existing);
+        } else {
+            workPart = packagePartRepository.save(packagePart);
+        }
+        try {
+            HttpStatus httpStatus = capabilityClient.postCriteria(workPart.getPayload(), source);
+            if (httpStatus != null && httpStatus.is2xxSuccessful()) {
+                workPart.setStatusId(StatusEnumUtils.getIdByStatus(SUCCESS_STATUS));
+            } else {
+                workPart.setStatusId(StatusEnumUtils.getIdByStatus(ERROR_STATUS));
+            }
+            packagePartRepository.save(workPart);
+
+            if (workPart.getPartNum() == count) {
+                packageRepository.setDoneById(workPart.getIdPackage());
+            }
+        } catch (Exception e) {
+            log.error("Internal server Error: " + e.getMessage());
+        }
+    }
+
     public void addTechProductRelation(PackagePart packagePart, int count) throws Exception {
         existPackage(packagePart.getIdPackage());
         existsByPackageIdAndPartNumAndStatusIn(packagePart.getIdPackage(), packagePart.getPartNum());
