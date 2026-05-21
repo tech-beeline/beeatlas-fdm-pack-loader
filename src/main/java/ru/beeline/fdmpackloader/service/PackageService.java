@@ -28,7 +28,6 @@ import ru.beeline.fdmpackloader.dto.PackageRegistrationRequestDTO;
 import ru.beeline.fdmpackloader.dto.PackageRegistrationResponseDTO;
 import ru.beeline.fdmpackloader.dto.PackageV2DTO;
 import ru.beeline.fdmpackloader.dto.product.ProductPutDto;
-import ru.beeline.fdmpackloader.exception.ForbiddenException;
 import ru.beeline.fdmpackloader.exception.MessageValidationException;
 import ru.beeline.fdmpackloader.exception.NotFoundException;
 import ru.beeline.fdmpackloader.mapper.PackageMapper;
@@ -43,7 +42,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import static ru.beeline.fdmpackloader.controller.RequestContext.getUserRoles;
 import static ru.beeline.fdmpackloader.utils.Constants.ERROR_STATUS;
 import static ru.beeline.fdmpackloader.utils.Constants.PACKAGE_PARSING;
 import static ru.beeline.fdmpackloader.utils.Constants.PROCESS_STATUS;
@@ -103,9 +101,6 @@ public class PackageService {
     }
 
     public Page<PackageDTO> getPackageList(String status, int limit, int offset) {
-        if (getUserRoles().contains("ADMIN")) {
-            throw new ForbiddenException("FORBIDDEN");
-        }
         switch (status) {
             case SUCCESS_STATUS:
                 return packageMapper.convertToDto(packageRepository.findPackagesWithStatusAndSuccessPartsEquals(PageRequest.of(offset, limit)),
@@ -130,9 +125,6 @@ public class PackageService {
     }
 
     public Page<PackageV2DTO> getPackageV2List(String status, Integer limit, Integer offset, String source) {
-        if (getUserRoles().contains("ADMIN")) {
-            throw new ForbiddenException("FORBIDDEN");
-        }
         if (limit == null || limit <= 0) {
             limit = Integer.MAX_VALUE;
         }

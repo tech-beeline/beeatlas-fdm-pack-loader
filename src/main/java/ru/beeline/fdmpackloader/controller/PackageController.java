@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.beeline.fdmpackloader.aspect.AdminAccessControl;
 import ru.beeline.fdmpackloader.dto.PackageAndPackagePartDTO;
 import ru.beeline.fdmpackloader.dto.PackageDTO;
 import ru.beeline.fdmpackloader.dto.PackageRegistrationRequestDTO;
@@ -41,7 +40,6 @@ public class PackageController {
         return packageService.getPackageList(status, limit, offset);
     }
 
-    @AdminAccessControl
     @GetMapping("/package/{id}")
     @ApiOperation(value = "Информация о пакете")
     public PackageAndPackagePartDTO getPackageParts(@PathVariable Integer id,
