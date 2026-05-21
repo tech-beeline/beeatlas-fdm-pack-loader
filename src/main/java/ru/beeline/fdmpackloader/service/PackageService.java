@@ -16,7 +16,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.beeline.fdmpackloader.dto.product.ProductPutDto;
 import ru.beeline.fdmpackloader.client.CapabilityClient;
 import ru.beeline.fdmpackloader.client.ProductClient;
 import ru.beeline.fdmpackloader.client.TechradarClient;
@@ -28,6 +27,7 @@ import ru.beeline.fdmpackloader.dto.PackageDTO;
 import ru.beeline.fdmpackloader.dto.PackageRegistrationRequestDTO;
 import ru.beeline.fdmpackloader.dto.PackageRegistrationResponseDTO;
 import ru.beeline.fdmpackloader.dto.PackageV2DTO;
+import ru.beeline.fdmpackloader.dto.product.ProductPutDto;
 import ru.beeline.fdmpackloader.exception.MessageValidationException;
 import ru.beeline.fdmpackloader.exception.NotFoundException;
 import ru.beeline.fdmpackloader.mapper.PackageMapper;
@@ -226,9 +226,13 @@ public class PackageService {
         try {
             HttpStatus httpStatus = capabilityClient.postCriteria(workPart.getPayload(), source);
             if (httpStatus != null && httpStatus.is2xxSuccessful()) {
+                log.info("Успешный запрос в сервис Capability 200 ok.");
                 workPart.setStatusId(StatusEnumUtils.getIdByStatus(SUCCESS_STATUS));
+                log.info("STATUS = SUCCESS");
             } else {
+                log.info("Ошибка при  запросе в сервис Capability.");
                 workPart.setStatusId(StatusEnumUtils.getIdByStatus(ERROR_STATUS));
+                log.info("STATUS = ERROR");
             }
             packagePartRepository.save(workPart);
 

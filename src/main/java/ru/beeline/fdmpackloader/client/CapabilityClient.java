@@ -61,6 +61,7 @@ public class CapabilityClient {
             headers.add("SOURCE", source);
 
             HttpEntity<String> entity = new HttpEntity<>(body, headers);
+            log.info("Запрос в сервис capability с телом: {}", body);
             return restTemplate
                     .exchange(capabilityServerUrl + "/api/v1/criterias", HttpMethod.POST, entity, Void.class)
                     .getStatusCode();
