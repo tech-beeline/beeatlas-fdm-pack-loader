@@ -4,13 +4,14 @@
 
 package ru.beeline.fdmpackloader.controller;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Api(value = "Application API", tags = "Application")
+@Tag(name = "Приложение", description = "Служебная информация о сервисе: имя и версия")
 public class ApplicationController {
 
     @Value("${app.version}")
@@ -21,6 +22,7 @@ public class ApplicationController {
 
 
     @GetMapping("/")
+    @Operation(summary = "Приветствие", description = "Возвращает имя и версию запущенного сервиса")
     public String getData() {
         return "Welcome " + appName + " " + appVersion;
     }

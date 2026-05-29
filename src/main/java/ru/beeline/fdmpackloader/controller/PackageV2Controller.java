@@ -4,22 +4,27 @@
 
 package ru.beeline.fdmpackloader.controller;
 
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
+import ru.beeline.fdmpackloader.annotation.ApiErrorCodes;
 import ru.beeline.fdmpackloader.dto.PackageV2DTO;
 import ru.beeline.fdmpackloader.service.PackageService;
 
 @RestController
 @RequestMapping("/api/v2")
+@Tag(name = "Пакеты v2", description = "Получение списка пакетов с расширенной фильтрацией (API v2)")
 public class PackageV2Controller {
 
     @Autowired
     private PackageService packageService;
 
+    @ApiErrorCodes({400, 500})
     @GetMapping("/packages-list")
-    @ApiOperation(value = "Получение списка пакетов v2")
+    @Operation(summary = "Получение списка пакетов v2",
+            description = "Возвращает постраничный список пакетов с фильтрацией по статусу и источнику")
     public Page<PackageV2DTO> getKidsById(@RequestParam(value = "status", required = false, defaultValue = "none") String status,
                                           @RequestParam(value = "source", required = false) String source,
                                           @RequestParam(value = "limit", required = false) Integer limit,
