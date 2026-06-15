@@ -2,7 +2,7 @@
  * Copyright (c) 2024 PJSC VimpelCom
  */
 
-package ru.beeline.fdmpackloader.aspect;
+package ru.beeline.fdmpackloader.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -11,5 +11,6 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface AdminAccessControl {
+public @interface ApiErrorCodes {
+    int[] value();
 }
